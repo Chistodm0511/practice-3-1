@@ -1,39 +1,36 @@
 import './styles.css';
-import { Book, Catalog } from './task1-types';
-import { addBook, removeBook } from './task2-functions';
+import { Book } from './task1-types';
+// Импортируем класс, а не функции addBook/removeBook
+import { BookCatalog } from './task6-classes'; 
 import { applyFilters, filterByAuthor, filterByMinYear } from './task3-filters';
 import { createBookFromForm } from './task4-integration';
-import { filterByTitle, sortBooks } from './task5-utils';
-//TODO 3.0: импортируйте BookCatalog из task6
+import { filterByTitle } from './task5-utils';
 
-// TODO 3.1: замените `let catalog: Catalog = {...}` на экземпляр
-// `new BookCatalog([...те же книги...], 'main')`.
-// Тип `Catalog` после замены больше не нужен — уберите импорт.
+// TODO 3.1: Создаем экземпляр класса
+let catalog = new BookCatalog('main', [
+  { id: '1', title: 'TypeScript Guide', authors: ['John Doe'], year: 2024 },
+  { id: '2', title: 'JavaScript Basics', authors: ['Jane Smith'], year: 2022 },
+]);
 
-let catalog: Catalog = {
-  '1': { id: '1', title: 'TypeScript Guide', authors: ['John Doe'], year: 2024 },
-  '2': { id: '2', title: 'JavaScript Basics', authors: ['Jane Smith'], year: 2022 },
-};
-
-
-// восстановление из localStorage
-
-// Сейчас: JSON.parse кладёт в catalog простой объект — этого достаточно,
-// потому что все операции идут через свободные функции addBook/removeBook.
-// TODO 3.2: после перехода на класс JSON.parse вернёт объект БЕЗ методов.
-// Нужно будет воссоздать экземпляр:
-//   const parsed = JSON.parse(saved);
-//   catalog = new BookCatalog(parsed.books, parsed.id);
-
+// TODO 3.2: Восстановление из localStorage с пересозданием экземпляра
 const saved = localStorage.getItem('catalog');
 if (saved) {
-  catalog = JSON.parse(saved) as Catalog;
+  try {
+    const parsed = JSON.parse(saved);
+    // Важно: JSON.parse возвращает простой объект, поэтому создаем новый экземпляр класса
+    catalog = new BookCatalog(parsed.id, parsed.books);
+  } catch (e) {
+    console.error('Ошибка парсинга localStorage', e);
+  }
 }
 
-
-// сохранение В localStorage
+// Сохранение в localStorage
 function saveCatalog() {
-  localStorage.setItem('catalog', JSON.stringify(catalog));
+  // Сохраняем только нужные поля, так как у класса есть методы
+  localStorage.setItem('catalog', JSON.stringify({
+    id: catalog.id,
+    books: catalog.getBooks()
+  }));
 }
 
 // DOM-элементы
@@ -72,13 +69,11 @@ function renderBooks(books: Book[]) {
     const deleteBtn = document.createElement('button');
     deleteBtn.textContent = 'Удалить';
     deleteBtn.addEventListener('click', () => {
-
-      // TODO 3.3: замените функциональный removeBook на метод класса.      
-      catalog = removeBook(catalog, book.id)
+      // TODO 3.3: Используем метод класса removeBook
+      catalog.removeBook(book.id);
       saveCatalog();
-      // TODO 3.4: замените вызов Object.values(catalog) на метод каталога.
-      // Таких мест, где вызывается Object.values(catalog), в файле несколько — найдите все.
-      renderBooks(Object.values(catalog));
+      // TODO 3.4: Используем метод getBooks() вместо Object.values
+      renderBooks(catalog.getBooks());
     });
     card.append(deleteBtn);
 
@@ -87,7 +82,7 @@ function renderBooks(books: Book[]) {
 }
 
 // Первичная отрисовка
-renderBooks(Object.values(catalog));
+renderBooks(catalog.getBooks());
 
 // обработчик формы
 form.addEventListener('submit', (e) => {
@@ -97,13 +92,12 @@ form.addEventListener('submit', (e) => {
     const formData = new FormData(form);
     const newBook = createBookFromForm(formData);
 
-    // TODO 3.5: замените функциональный addBook на метод класса.
-    catalog = addBook(catalog, newBook);
-
+    // TODO 3.5: Используем метод класса addBook
+    catalog.addBook(newBook);
     saveCatalog();
     form.reset();
 
-    renderBooks(Object.values(catalog));
+    renderBooks(catalog.getBooks());
   } catch (error) {
     if (error instanceof Error) {
       errorMessage.textContent = error.message;
@@ -119,10 +113,12 @@ function refreshList() {
   if (yearInput.value) filters.push(filterByMinYear(parseInt(yearInput.value, 10)));
   if (searchInput.value.trim()) filters.push(filterByTitle(searchInput.value.trim()));
 
-  const allBooks = Object.values(catalog);
+  // Получаем книги через метод класса
+  const allBooks = catalog.getBooks();
   const filteredBooks = applyFilters(allBooks, filters);
 
-  renderBooks(sortBooks(filteredBooks, sortBySelect.value as 'year' | 'rating'));
+  // Сортируем через метод класса sortBy
+  renderBooks(catalog.sortBy(sortBySelect.value as 'year' | 'rating'));
 }
 
 filterBtn.addEventListener('click', refreshList);

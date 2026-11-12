@@ -1,37 +1,49 @@
 // ============================================================
 // Практика 3: Классы и ООП
 // ============================================================
-// Цель: заменить функциональный каталог из Практик 2.1–2.2
-// на класс с состоянием.
-//
-// Проверка: npm test -- task6
-// ============================================================
 
 import { Book } from "./task1-types";
 import { filterByTitle, sortBooks } from "./task5-utils";
 
-/*
-  Реализуйте класс BookCatalog.
+export class BookCatalog {
+  // Состояние
+  private books: Book[] = [];
+  readonly id: string;
 
-  Состояние:
-    - books: Book[]        — приватное, снаружи недоступно
-    - id: string           — readonly
+  // Конструктор
+  constructor(id: string, books: Book[] = []) {
+    this.id = id;
+    this.books = books;
+  }
 
-  Конструктор: (id: string, books: Book[] = [])
+  // Публичный API
+  addBook(book: Book): void {
+    // Не мутируем массив, а создаем новый (иммутабельность)
+    this.books = [...this.books, book];
+  }
 
-  Публичный API:
-    addBook(book: Book): void
-    removeBook(id: string): void
-    getBooks(): Book[]
-    searchByTitle(query: string): Book[]
-    sortBy(sortType: 'year' | 'rating'): Book[]
-    get count(): number
+  removeBook(id: string): void {
+    // Создаем новый массив без книги с указанным id
+    this.books = this.books.filter((b) => b.id !== id);
+  }
 
-  Требования:
-    - addBook / removeBook не мутируют массив, а создают новый
-    - searchByTitle и sortBy переиспользуют filterByTitle / sortBooks
-    - внешний код не может присвоить this.books напрямую
+  getBooks(): Book[] {
+    // Возвращаем копию, чтобы внешний код не мог изменить внутренний массив
+    return [...this.books];
+  }
 
-  Бонус: класс Book с полями id, title, authors, year?, rating?,
-  методом format() и статическим createFromFormData(FormData).
-*/
+  searchByTitle(query: string): Book[] {
+    // Переиспользуем filterByTitle из Практики 2.2
+    return this.books.filter(filterByTitle(query));
+  }
+
+  sortBy(sortType: "year" | "rating"): Book[] {
+    // Переиспользуем sortBooks из Практики 2.2
+    return sortBooks(this.books, sortType);
+  }
+
+  // Геттер для получения количества книг
+  get count(): number {
+    return this.books.length;
+  }
+}
