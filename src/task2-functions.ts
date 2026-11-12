@@ -20,6 +20,9 @@ export function removeBook(catalog: Catalog, id: string): Catalog {
 }
 
 // поиск книгу в каталоге по id
+/** 
+ * @deprecated пока не используется, задел на фичу "Страница книги по ID" 
+ */
 export function getBook(catalog: Catalog, id: string): Book | undefined {
   return catalog[id];
 }
